@@ -1,16 +1,18 @@
 #include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
 #include "chesso.h"
 
 int main()
 {
 	char nextMove[10];
-	initChessboard();
 	printf( "Welcome to Chesso, by Alessandro Cocilova \n");
-	printf( "Please type your move in the format: StartcolStartrow.EndcolEndrow (es. a1.b1) \n\n\n");
+	printf( "Please type your move in the format: StartcolStartrow.EndcolEndrow (es. a1.a2) \n\n\n");
+	initChessboard();
 	while (!playerHasWon()) { // senseless to pass the chessboard to this function, because there's only one chessboard
  	printChessboard();
  	printf( "Type your next move: ");
-   	gets(nextMove);
+   	fgets(nextMove, 10, stdin);
    	move(nextMove);
 
  	//verifica validità mossa
@@ -19,39 +21,35 @@ int main()
 
 };
 
-//STRUCT CHANGHED ===> TO BE CHANGED 
 void initChessboard(){
-	strcpy(matchChessboard.row8, "8-+-+k+h+");
-	strcpy(matchChessboard.row7, "7pppppppp");
-	strcpy(matchChessboard.row6, "6-+-+-+-+");
-	strcpy(matchChessboard.row5, "5+-+-+-+-");
-	strcpy(matchChessboard.row4, "4-+-+-+-+");
-	strcpy(matchChessboard.row3, "3+-+-+-+-");
-	strcpy(matchChessboard.row2, "2pppppppp");
-	strcpy(matchChessboard.row1, "1+-+-k-h-");
-	strcpy(matchChessboard.row0, " abcdefgh");
+	strcpy(row0, "  a b c d e f g h");
+	strcpy(col0, "12345678");
+	strcpy(matchChessboard.matrix[7], "-+-+k+h+");
+	strcpy(matchChessboard.matrix[6], "pppppppp");
+	strcpy(matchChessboard.matrix[5], "-+-+-+-+");
+	strcpy(matchChessboard.matrix[4], "+-+-+-+-");
+	strcpy(matchChessboard.matrix[3], "-+-+-+-+");
+	strcpy(matchChessboard.matrix[2], "+-+-+-+-");
+	strcpy(matchChessboard.matrix[1], "pppppppp");
+	strcpy(matchChessboard.matrix[0], "+-+-k-h-");
 };
 
 void printChessboard(){
-	//se non è prima invocazione, cancella vecchia scacchiera da stdout
-	if (!firstChessboardPrint){
-		//remove from stdout 8+1+8+1 (squares/pieces, linenum, spaces between them, final \n)
-		//do this procedure 9 times (one per row)
-	}
-	else {
-		firstChessboardPrint = false;
-	}
 
-	for (i = 1; i < 9; i++){
-		for (j = 1; i < 9); i++){
-			print(" %s"matrixChessboard[i][j]);
+	for (int i = 7; i >= 0; i--){ // because row8 has to be printfed first
+		printf("%c", col0[i]);
+		for (int j = 0; j < 8; j++){
+			printf(" %c", matchChessboard.matrix[i][j]);
 		}
-		print("\n");
-	} 
+		printf("\n");
+	}
+	printf("%s\n", row0); 
 
 };
 
 void move(char playerMove[]){
+	printf("%s\n", playerMove);
+
 	if (moveIsLegal(playerMove)){
 		updateChessboard();
 	}
@@ -64,7 +62,30 @@ void updateChessboard(){
 };
 
 bool moveIsLegal(char playerMove[]){
-	//temporary placeholder function
+	int startRow, startCol, endRow, endCol;
+	switch (playerMove[0]){
+		case 'a': startCol = 0; break;
+		case 'b': startCol = 1; break;
+		case 'c': startCol = 2; break;
+		case 'd': startCol = 3; break;
+		case 'e': startCol = 4; break;
+		case 'f': startCol = 5; break;
+		case 'g': startCol = 6; break;
+		case 'h': startCol = 7; break;
+	}
+	switch (playerMove[2]){
+		case 'a': endCol = 0; break;
+		case 'b': endCol = 1; break;
+		case 'c': endCol = 2; break;
+		case 'd': endCol = 3; break;
+		case 'e': endCol = 4; break;
+		case 'f': endCol = 5; break;
+		case 'g': endCol = 6; break;
+		case 'h': endCol = 7; break;
+	}
+	startRow = playerMove[1] - '0' -1;
+	endRow = playerMove[3] - '0' -1;
+	printf("%d %d %d %d\n", startCol, startRow, endCol, endRow);
 	return 1;
 };
 

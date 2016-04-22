@@ -11,12 +11,11 @@ int main()
 	initChessboard();
 	while (!playerHasWon()) { // senseless to pass the chessboard to this function, because there's only one chessboard
  	printChessboard();
- 	printf( "Type your next move: ");
-   	fgets(nextMove, 10, stdin);
+ 	do {
+ 		printf( "Type your next move: ");
+   		fgets(nextMove, 10, stdin);
+ 	} while (!moveIsLegal(decodePlayerMove(nextMove)));
    	move(nextMove);
-
- 	//verifica validità mossa
- 	//aggiorna scacchiera
  }
 
 };
@@ -24,8 +23,8 @@ int main()
 void initChessboard(){
 	strcpy(row0, "  a b c d e f g h");
 	strcpy(col0, "12345678");
-	strcpy(matchChessboard.matrix[7], "-+-+k+h+");
-	strcpy(matchChessboard.matrix[6], "pppppppp");
+	strcpy(matchChessboard.matrix[7], "-+-+r+c+");
+	strcpy(matchChessboard.matrix[6], "dddddddd");
 	strcpy(matchChessboard.matrix[5], "-+-+-+-+");
 	strcpy(matchChessboard.matrix[4], "+-+-+-+-");
 	strcpy(matchChessboard.matrix[3], "-+-+-+-+");
@@ -49,10 +48,7 @@ void printChessboard(){
 
 void move(char playerMove[]){
 	printf("%s\n", playerMove);
-
-	if (moveIsLegal(playerMove)){
-		updateChessboard();
-	}
+	updateChessboard();
 };
 
 void updateChessboard(){
@@ -61,7 +57,8 @@ void updateChessboard(){
 	//matchChessboard.row3[1] = "p"
 };
 
-bool moveIsLegal(char playerMove[]){
+/*Translates the player move from standard chess ("a1b1") form to numeric form*/
+int* decodePlayerMove(char playerMove[]){
 	int startRow, startCol, endRow, endCol;
 	switch (playerMove[0]){
 		case 'a': startCol = 0; break;
@@ -85,7 +82,22 @@ bool moveIsLegal(char playerMove[]){
 	}
 	startRow = playerMove[1] - '0' -1;
 	endRow = playerMove[3] - '0' -1;
-	printf("%d %d %d %d\n", startCol, startRow, endCol, endRow);
+
+	lastMove[0] = startCol;
+	lastMove[1] = startRow;
+	lastMove[2] = endCol;
+	lastMove[3] = endRow;
+	printf("Dentro decode %d %d %d %d\n", startCol, startRow, endCol, endRow);
+
+	return lastMove;
+}
+
+bool moveIsLegal(int playerMoveDecoded[]){
+	printf("Dentro moveIsLegal %d %d %d %d\n", playerMoveDecoded[0], playerMoveDecoded[1], playerMoveDecoded[2], playerMoveDecoded[3]);
+	if (playerMoveDecoded[0] < 0 | playerMoveDecoded[0] > 8 | playerMoveDecoded[1] < 0 | playerMoveDecoded[1] > 8 | playerMoveDecoded[2] < 0 | playerMoveDecoded[2] > 8 | playerMoveDecoded[3] < 0 | playerMoveDecoded[3] > 8) {
+		printf("Illegal move\n");
+		return 0;
+	}
 	return 1;
 };
 

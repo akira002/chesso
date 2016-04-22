@@ -11,6 +11,8 @@ char row0[18];
 
 char col0[9];
 
+int lastMove[4];
+
 //enum piece{knight, king, pawn};
 
 void initChessboard();
@@ -23,6 +25,8 @@ void move(char playerMove[]);
 
 void updateChessboard();
 
-bool moveIsLegal(char playerMove[]);
+int* decodePlayerMove(char playerMove[]);
+
+bool moveIsLegal(int playerMoveDecoded[]);
 
 bool playerHasWon();

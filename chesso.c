@@ -157,7 +157,6 @@ bool moveIsLegal(int playerMoveDecoded[]){
 		else if (tmp*tmp == 1){
 			if ( (matchChessboard[playerMoveDecoded[3]][playerMoveDecoded[2]] =='d') | (matchChessboard[playerMoveDecoded[3]][playerMoveDecoded[2]] =='c') | 
 				(matchChessboard[playerMoveDecoded[3]][playerMoveDecoded[2]] =='r') ) {
-				printf("cacca\n");
 				playerPawnHasMoved[playerMoveDecoded[0]] = true;
 				return 1;
 			}

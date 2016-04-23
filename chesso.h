@@ -1,9 +1,7 @@
-struct Chessboard
-{
-	char matrix[8][9]; //one char more than the one i've counted, for '/0', TERMINATOR CHAR
-};
+char matchChessboard[8][9];
 
-struct Chessboard matchChessboard;
+bool playerPawnHasMoved[8];
+bool cpuPawnHasMoved[8];
 
 //same here
 
@@ -12,6 +10,8 @@ char row0[18];
 char col0[9];
 
 int lastMove[4];
+
+bool isPlayerTurn = true; /*when false is CPU's turn*/
 
 //enum piece{knight, king, pawn};
 

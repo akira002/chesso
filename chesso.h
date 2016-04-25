@@ -1,9 +1,20 @@
 char matchChessboard[8][9];
 
+typedef enum {PAWN, KNIGHT, KING} pieceType;
+
+typedef struct {
+	pieceType myPieceType;
+	int position[2]; //row, col. set to -1, -1 if piece has been eaten
+	bool avaiableForEnpassant;
+} piece;
+
+piece gamePieces[20];
+
+// not scalable
 bool playerPawnHasMoved[8];
+
 bool cpuPawnHasMoved[8];
 
-//same here
 
 char row0[18]; 
 
@@ -13,9 +24,9 @@ int lastMove[4];
 
 bool isPlayerTurn = true; /*when false is CPU's turn*/
 
-//enum piece{knight, king, pawn};
-
 void initChessboard();
+
+void initPieces();
 
 void printChessboard();
 

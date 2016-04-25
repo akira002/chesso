@@ -13,6 +13,7 @@ int main()
 	printf("Welcome to Chesso, by Alessandro Cocilova \n");
 	printf("Please type your move in the format: StartcolStartrow.EndcolEndrow (es. a1.a2) \n\n\n");
 	initChessboard();
+	initPieces();
 	while (!playerHasWon()) { // senseless to pass the chessboard to this function, because there's only one chessboard
  	printChessboard();
  	do {
@@ -24,6 +25,7 @@ int main()
 
 };
 
+/*Inits the View side of the checkerboard*/
 void initChessboard(){
 	strcpy(row0, "  a b c d e f g h");
 	strcpy(col0, "12345678");
@@ -35,6 +37,41 @@ void initChessboard(){
 	strcpy(matchChessboard[2], "+-+-+-+-");
 	strcpy(matchChessboard[1], "pppppppp");
 	strcpy(matchChessboard[0], "+-+-k-h-");
+};
+
+/*Inits the Controller side of the checkerboard*/
+void initPieces(){
+	for (int i = 0; i < 8; i++){
+		gamePieces[i].position[0] = 1;
+		gamePieces[i].position[1] = i;
+		gamePieces[i].myPieceType = PAWN;
+		gamePieces[i].avaiableForEnpassant = false;
+	}
+	gamePieces[8].position[0] = 0;
+	gamePieces[8].position[1] = 6;
+	gamePieces[8].myPieceType = KNIGHT;
+	gamePieces[8].avaiableForEnpassant = false;
+
+	gamePieces[9].position[0] = 0;
+	gamePieces[9].position[1] = 4;
+	gamePieces[9].myPieceType = KING;
+	gamePieces[9].avaiableForEnpassant = false;
+
+	for (int i = 10; i < 18; i++){
+		gamePieces[i].position[0] = 6;
+		gamePieces[i].position[1] = i;
+		gamePieces[i].myPieceType = PAWN;
+		gamePieces[i].avaiableForEnpassant = false;
+	}
+	gamePieces[18].position[0] = 7;
+	gamePieces[18].position[1] = 6;
+	gamePieces[18].myPieceType = KNIGHT;
+	gamePieces[18].avaiableForEnpassant = false;
+
+	gamePieces[19].position[0] = 7;
+	gamePieces[19].position[1] = 4;
+	gamePieces[19].myPieceType = KING;
+	gamePieces[19].avaiableForEnpassant = false;
 };
 
 void printChessboard(){
@@ -139,7 +176,9 @@ bool moveIsLegal(int playerMoveDecoded[]){
 		return 0;
 	}
 
-	/*Pawn moves*/
+	/*MUST BE REFACTORED CONSIDERING THE NEW DATA STRUCTURES!!!*/
+	
+	/*Pawn moves for player*/
 	if (matchChessboard[playerMoveDecoded[1]][playerMoveDecoded[0]] =='p') {
 		int tmp = playerMoveDecoded[0] - playerMoveDecoded[2];
 
@@ -157,6 +196,31 @@ bool moveIsLegal(int playerMoveDecoded[]){
 		else if (tmp*tmp == 1){
 			if ( (matchChessboard[playerMoveDecoded[3]][playerMoveDecoded[2]] =='d') | (matchChessboard[playerMoveDecoded[3]][playerMoveDecoded[2]] =='c') | 
 				(matchChessboard[playerMoveDecoded[3]][playerMoveDecoded[2]] =='r') ) {
+				playerPawnHasMoved[playerMoveDecoded[0]] = true;
+				return 1;
+			}
+		}
+		/*EN PASSANT TO BE IMPLENTED!*/
+	}
+
+	/*Pawn moves for cpu*/
+	if (matchChessboard[playerMoveDecoded[1]][playerMoveDecoded[0]] =='d') {
+		int tmp = playerMoveDecoded[0] - playerMoveDecoded[2];
+
+		if (playerMoveDecoded[0] == playerMoveDecoded[2]){
+			if (playerMoveDecoded[3] - playerMoveDecoded[1] == 1) {
+				playerPawnHasMoved[playerMoveDecoded[0]] = true;
+				return 1;
+			}
+			else if ( (playerMoveDecoded[3] - playerMoveDecoded[1] == 2) & !playerPawnHasMoved[playerMoveDecoded[0]] & playerMoveDecoded[1] == 1) {
+				playerPawnHasMoved[playerMoveDecoded[0]] = true;
+				return 1;
+			}
+		}
+		/*If I move to a next column*/
+		else if (tmp*tmp == 1){
+			if ( (matchChessboard[playerMoveDecoded[3]][playerMoveDecoded[2]] =='p') | (matchChessboard[playerMoveDecoded[3]][playerMoveDecoded[2]] =='h') | 
+				(matchChessboard[playerMoveDecoded[3]][playerMoveDecoded[2]] =='k') ) {
 				playerPawnHasMoved[playerMoveDecoded[0]] = true;
 				return 1;
 			}

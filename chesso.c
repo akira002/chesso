@@ -45,32 +45,38 @@ void initPieces(){
 		gamePieces[i].position[0] = 1;
 		gamePieces[i].position[1] = i;
 		gamePieces[i].myPieceType = PAWN;
+		gamePieces[i].color = WHITE;
 		gamePieces[i].avaiableForEnpassant = false;
 	}
 	gamePieces[8].position[0] = 0;
 	gamePieces[8].position[1] = 6;
 	gamePieces[8].myPieceType = KNIGHT;
+	gamePieces[8].color = WHITE;
 	gamePieces[8].avaiableForEnpassant = false;
 
 	gamePieces[9].position[0] = 0;
 	gamePieces[9].position[1] = 4;
 	gamePieces[9].myPieceType = KING;
+	gamePieces[9].color = WHITE;
 	gamePieces[9].avaiableForEnpassant = false;
 
 	for (int i = 10; i < 18; i++){
 		gamePieces[i].position[0] = 6;
 		gamePieces[i].position[1] = i;
 		gamePieces[i].myPieceType = PAWN;
+		gamePieces[i].color = BLACK;
 		gamePieces[i].avaiableForEnpassant = false;
 	}
 	gamePieces[18].position[0] = 7;
 	gamePieces[18].position[1] = 6;
 	gamePieces[18].myPieceType = KNIGHT;
+	gamePieces[18].color = BLACK;
 	gamePieces[18].avaiableForEnpassant = false;
 
 	gamePieces[19].position[0] = 7;
 	gamePieces[19].position[1] = 4;
 	gamePieces[19].myPieceType = KING;
+	gamePieces[19].color = BLACK;
 	gamePieces[19].avaiableForEnpassant = false;
 };
 
@@ -87,16 +93,45 @@ void printChessboard(){
 
 };
 
-/*Moves a piece from its square to the specified square*/
+int findPieceToBeMoved(){
+	if (isPlayerTurn) {/*I search in the white pieces*/
+		for (int i = 0; i <10; i++) {
+			/*Because in lastMove pos is memorized col row, in .position is row.col*/
+			if ( (gamePieces[i].position[0] == lastMove[1]) & (gamePieces[i].position[1] == lastMove[0]) ) return i;
+		}
+	} 
+
+	else {
+		for (int i = 10; i <20; i++) {
+			if ( (gamePieces[i].position[0] == lastMove[1]) & (gamePieces[i].position[1] == lastMove[0]) ) return i;
+		}
+	}
+	return -1;
+};
+
+/*Moves a piece from its square to the specified square updating the model*/
 void move(char playerMove[]){
 	/*playerMove used just to provide a feedback to the player of CPU's move*/
 	printf("%s\n", playerMove);
-	matchChessboard[lastMove[3]][lastMove[2]] = matchChessboard[lastMove[1]][lastMove[0]];
+	int pieceToBeMoved;
+	pieceToBeMoved = findPieceToBeMoved();
+
+	if (pieceToBeMoved != -1) {
+		gamePieces[pieceToBeMoved].position[0] = lastMove[3];
+		gamePieces[pieceToBeMoved].position[1] = lastMove[2];
+		
+		printf("New position %d %d\n", gamePieces[pieceToBeMoved].position[0], gamePieces[pieceToBeMoved].position[1]);
+		if (gamePieces[pieceToBeMoved].myPieceType == PAWN) printf("you moved a pawn, didn't you?\n");
+	}
+	else perror("Cannot find the piece!");
+	
 	updateChessboard();
 };
 
-/*Fixes the empty squares after the moves*/
+/*Updates the visual side of the checkerboard. Fixes the empty squares after the moves*/
 void updateChessboard(){
+	matchChessboard[lastMove[3]][lastMove[2]] = matchChessboard[lastMove[1]][lastMove[0]];
+
 	if ( (lastMove[1]+1) % 2 == 1){
 		if ( (lastMove[0]+1) % 2 == 1){
 			matchChessboard[lastMove[1]][lastMove[0]] = '+';

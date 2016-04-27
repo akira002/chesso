@@ -76,7 +76,7 @@ void initChessboard(){
 	/*Consider refactoring*/
 	for (int i = 0; i<8; i++){
 		playerPawnHasMoved[i] = false;
-		cpuPawnHasMoved[i] = false;
+		aiPawnHasMoved[i] = false;
 	}
 };
 
@@ -140,7 +140,7 @@ void printChessboard(){
 
 /*Moves a piece from its square to the specified square updating the model*/
 void move(char playerMove[]){
-	/*playerMove used just to provide a feedback to the player of CPU's move*/
+	/*playerMove used just to provide a feedback to the player of AI's move*/
 	printf("%s\n", playerMove);
 
 	if (chessboard[lastMove[0]][lastMove[1]] != NULL) {
@@ -248,6 +248,26 @@ bool moveIsLegal(int move[]){
 };
 
 bool playerHasWon(){
-	//temporary placeholder function
+	if (isPlayerTurn){
+		for (int i = 0; i<8; i++) {
+			if (chessboard[7][i] != NULL) {
+				if ( (chessboard[7][i]->color == WHITE) & (chessboard[7][i]->myPieceType == PAWN) ){
+					printf("Match won by Player\n");
+					return 1;
+				}
+			}
+		}
+	}
+
+	else {
+		for (int i = 0; i<8; i++) {
+			if (chessboard[0][i] != NULL) {
+				if ( (chessboard[0][i]->color == BLACK) & (chessboard[0][i]->myPieceType == PAWN) ){
+					printf("Match won by AI\n");
+					return 1;
+				}
+			}
+		}
+	}
 	return 0;
 };

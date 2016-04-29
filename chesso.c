@@ -18,6 +18,8 @@ int main()
    		fgets(nextMove, 10, stdin);
  	} while (!moveIsLegal(decodePlayerMove(nextMove)));
    	move(nextMove);
+   	resetEnPassant();
+   	isPlayerTurn = !isPlayerTurn;
  }
 
 };
@@ -37,6 +39,11 @@ void initChessboard(){
 		chessboard[1][i]->myPieceType = PAWN;
 		chessboard[1][i]->color = WHITE;
 		chessboard[1][i]->avaiableForEnpassant = false;
+		chessboard[1][i]->position[0] = 1;
+		chessboard[1][i]->position[1] = i;
+
+		/*In this complementary data structure I memorize all the white pieces*/
+		whitePieces[i] = chessboard[1][i];
 	}
 
 	chessboard[0][6] = malloc(sizeof(piece));
@@ -44,12 +51,20 @@ void initChessboard(){
 	chessboard[0][6]->myPieceType = KNIGHT;
 	chessboard[0][6]->color = WHITE;
 	chessboard[0][6]->avaiableForEnpassant = false;
+	chessboard[0][6]->position[0] = 0;
+	chessboard[0][6]->position[1] = 6;
+
+	whitePieces[8] = chessboard[0][6];
 
 	chessboard[0][4] = malloc(sizeof(piece));
 
 	chessboard[0][4]->myPieceType = KING;
 	chessboard[0][4]->color = WHITE;
 	chessboard[0][4]->avaiableForEnpassant = false;
+	chessboard[0][4]->position[0] = 0;
+	chessboard[0][4]->position[1] = 4;
+
+	whitePieces[9] = chessboard[0][4];
 
 	for (int i = 0; i < 8; i++){
 		chessboard[6][i] = malloc(sizeof(piece));
@@ -57,6 +72,11 @@ void initChessboard(){
 		chessboard[6][i]->myPieceType = PAWN;
 		chessboard[6][i]->color = BLACK;
 		chessboard[6][i]->avaiableForEnpassant = false;
+		chessboard[6][i]->position[0] = 6;
+		chessboard[6][i]->position[1] = i;
+
+		/*In this complementary data structure I memorize all the black pieces*/
+		blackPieces[i] = chessboard[6][i];
 	}
 
 	chessboard[7][6] = malloc(sizeof(piece));
@@ -64,19 +84,27 @@ void initChessboard(){
 	chessboard[7][6]->myPieceType = KNIGHT;
 	chessboard[7][6]->color = BLACK;
 	chessboard[7][6]->avaiableForEnpassant = false;
+	chessboard[7][6]->position[0] = 7;
+	chessboard[7][6]->position[1] = 6;
+
+	blackPieces[8] = chessboard[7][6];
 
 	chessboard[7][4] = malloc(sizeof(piece));
 
 	chessboard[7][4]->myPieceType = KING;
 	chessboard[7][4]->color = BLACK;
 	chessboard[7][4]->avaiableForEnpassant = false;
+	chessboard[7][4]->position[0] = 7;
+	chessboard[7][4]->position[1] = 4;
+
+	blackPieces[9] = chessboard[7][4];
 
 	/*Where i've to do the free()? When the games ends?*/
 
 	/*Consider refactoring*/
 	for (int i = 0; i<8; i++){
-		playerPawnHasMoved[i] = false;
-		aiPawnHasMoved[i] = false;
+		whitePawnHasMoved[i] = false;
+		blackPawnHasMoved[i] = false;
 	}
 };
 
@@ -141,13 +169,22 @@ void printChessboard(){
 /*Moves a piece from its square to the specified square updating the model*/
 void move(char playerMove[]){
 	/*playerMove used just to provide a feedback to the player of AI's move*/
-	printf("%s\n", playerMove);
+	if (isPlayerTurn) printf("White moves: %s\n", playerMove);
+	else printf("Black moves: %s\n", playerMove);
 
 	if (chessboard[lastMove[0]][lastMove[1]] != NULL) {
 		/*The square where i've moved the piece, now targets to the piece*/
 		chessboard[lastMove[2]][lastMove[3]] = chessboard[lastMove[0]][lastMove[1]];
+		/*Update the piece's internal data structure*/
+		chessboard[lastMove[2]][lastMove[3]]->position[0] = lastMove[2];
+		chessboard[lastMove[2]][lastMove[3]]->position[1] = lastMove[3];
 		/*Old square contains now a pointer to null, meaning that it has no more pieces*/
 		chessboard[lastMove[0]][lastMove[1]] = NULL;
+		if(enPassantExploited) {
+			/*Remove the piece from a square even if i didn't move a piece in it*/
+			chessboard[lastMove[0]][lastMove[3]] = NULL;
+			enPassantExploited = false;
+		}
 	}
 	else perror("The selected square is empty");
 };
@@ -189,6 +226,164 @@ int* decodePlayerMove(char playerMove[]){
 	return lastMove;
 }
 
+bool isCheck(int move[], pieceColor myColor){
+	int kingPos[2];
+	kingPos[0] = move[2];
+	kingPos[1] = move[3];
+
+	/*Knight and King attacks in the same way for black and white*/
+	/*Can be attacked by an adversary's knight?*/
+	if (kingPos[0]+2 < 8){
+		if (kingPos[1]+1 < 8) {
+			if (chessboard[kingPos[0]+2][kingPos[1]+1] != NULL){
+				if ((chessboard[kingPos[0]+2][kingPos[1]+1]->color != myColor ) & 
+					(chessboard[kingPos[0]+2][kingPos[1]+1]->myPieceType == KNIGHT )) return 1;
+			}				
+		}
+		if (kingPos[1]-1 >= 0) {
+			if (chessboard[kingPos[0]+2][kingPos[1]-1] != NULL){
+				if ((chessboard[kingPos[0]+2][kingPos[1]-1]->color != myColor ) & 
+					(chessboard[kingPos[0]+2][kingPos[1]-1]->myPieceType == KNIGHT )) return 1;
+			}	
+		}
+	}
+	if (kingPos[0]-2 >= 0){
+		if (kingPos[1]+1 < 8) {
+			if (chessboard[kingPos[0]-2][kingPos[1]+1] != NULL){
+				if ((chessboard[kingPos[0]-2][kingPos[1]+1]->color != myColor ) & 
+					(chessboard[kingPos[0]-2][kingPos[1]+1]->myPieceType == KNIGHT )) return 1;
+			}
+		}
+		if (kingPos[1]-1 >= 0) {
+			if (chessboard[kingPos[0]-2][kingPos[1]-1] != NULL){
+				if ((chessboard[kingPos[0]-2][kingPos[1]-1]->color != myColor ) & 
+					(chessboard[kingPos[0]-2][kingPos[1]-1]->myPieceType == KNIGHT )) return 1;
+			}
+		}
+	}
+	if (kingPos[1]+2 < 8){
+		if (kingPos[0]+1 < 8) {
+			if (chessboard[kingPos[0]+1][kingPos[1]+2] != NULL){
+				if ((chessboard[kingPos[0]+1][kingPos[1]+2]->color != myColor ) & 
+					(chessboard[kingPos[0]+1][kingPos[1]+2]->myPieceType == KNIGHT )) return 1;
+			}
+		}
+		if (kingPos[0]-1 >= 0) {
+			if (chessboard[kingPos[0]-1][kingPos[1]+2] != NULL){
+				if ((chessboard[kingPos[0]-1][kingPos[1]+2]->color != myColor ) & 
+					(chessboard[kingPos[0]-1][kingPos[1]+2]->myPieceType == KNIGHT )) return 1;
+			}
+		}
+	}
+	if (kingPos[1]-2 >= 0){
+		if (kingPos[0]+1 < 8) {
+			if (chessboard[kingPos[0]+1][kingPos[1]-2] != NULL){
+				if ((chessboard[kingPos[0]+1][kingPos[1]-2]->color != myColor ) & 
+					(chessboard[kingPos[0]+1][kingPos[1]-2]->myPieceType == KNIGHT )) return 1;
+			}
+		}
+		if (kingPos[0]-1 >= 0) {
+			if (chessboard[kingPos[0]-1][kingPos[1]-2] != NULL){
+				if ((chessboard[kingPos[0]-1][kingPos[1]-2]->color != myColor ) & 
+					(chessboard[kingPos[0]-1][kingPos[1]-2]->myPieceType == KNIGHT )) return 1;
+			}
+		}
+	}
+	/*Can be attacked by adversary's king?*/
+	if (kingPos[0]+1 < 8){
+		if (kingPos[1]+1 < 8) {
+			if (chessboard[kingPos[0]+1][kingPos[1]+1] != NULL){
+				if ((chessboard[kingPos[0]+1][kingPos[1]+1]->color != myColor ) & 
+					(chessboard[kingPos[0]+1][kingPos[1]+1]->myPieceType == KING )) return 1;
+			}
+		}
+		if (kingPos[1]-1 >= 0) {
+			if (chessboard[kingPos[0]+1][kingPos[1]-1] != NULL){
+				if ((chessboard[kingPos[0]+1][kingPos[1]-1]->color != myColor ) & 
+					(chessboard[kingPos[0]+1][kingPos[1]-1]->myPieceType == KING )) return 1;
+			}
+		}
+	}
+	if (kingPos[0]-1 >= 0){
+		if (kingPos[1]+1 < 8) {
+			if (chessboard[kingPos[0]-1][kingPos[1]+1] != NULL){
+				if ((chessboard[kingPos[0]-1][kingPos[1]+1]->color != myColor ) & 
+					(chessboard[kingPos[0]-1][kingPos[1]+1]->myPieceType == KING )) return 1;
+			}
+		}
+		if (kingPos[1]-1 >= 0) {
+			if (chessboard[kingPos[0]-1][kingPos[1]-1] != NULL){
+				if ((chessboard[kingPos[0]-1][kingPos[1]-1]->color != myColor ) & 
+					(chessboard[kingPos[0]-1][kingPos[1]-1]->myPieceType == KING )) return 1;
+			}
+		}
+	}
+	if (kingPos[1]+1 < 8) {
+		if (chessboard[kingPos[0]][kingPos[1]+1] != NULL){
+			if ((chessboard[kingPos[0]][kingPos[1]+1]->color != myColor ) & 
+				(chessboard[kingPos[0]][kingPos[1]+1]->myPieceType == KING )) return 1;
+		}
+	}
+	if (kingPos[1]-1 >= 0) {
+		if (chessboard[kingPos[0]][kingPos[1]-1] != NULL){
+			if ((chessboard[kingPos[0]][kingPos[1]-1]->color != myColor ) & 
+				(chessboard[kingPos[0]][kingPos[1]-1]->myPieceType == KING )) return 1;
+		}
+	}
+	if (kingPos[0]+1 < 8) {
+		if (chessboard[kingPos[0]+1][kingPos[1]] != NULL){
+			if ((chessboard[kingPos[0]+1][kingPos[1]]->color != myColor ) & 
+				(chessboard[kingPos[0]+1][kingPos[1]]->myPieceType == KING )) return 1;
+		}
+	}
+	if (kingPos[0]-1 >= 0) {
+		if (chessboard[kingPos[0]-1][kingPos[1]] != NULL){
+			if ((chessboard[kingPos[0]-1][kingPos[1]]->color != myColor ) & 
+				(chessboard[kingPos[0]-1][kingPos[1]]->myPieceType == KING )) return 1;
+		}
+	}
+
+	/*Can be attacked by a Pawn?*/
+	/*Black pawns attack from botton to top*/
+	if (myColor == WHITE){
+		if (kingPos[0]+1 < 8){
+			if (kingPos[1]+1 < 8) {
+				if (chessboard[kingPos[0]+1][kingPos[1]+1] != NULL){
+					if ((chessboard[kingPos[0]+1][kingPos[1]+1]->color == BLACK ) & 
+						(chessboard[kingPos[0]+1][kingPos[1]+1]->myPieceType == PAWN )) return 1;
+				}
+			}
+			if (kingPos[1]-1 >= 0) {
+				if (chessboard[kingPos[0]+1][kingPos[1]-1] != NULL){
+					if ((chessboard[kingPos[0]+1][kingPos[1]-1]->color == BLACK ) & 
+						(chessboard[kingPos[0]+1][kingPos[1]-1]->myPieceType == PAWN )) return 1;
+				}
+			}
+		}
+	} 
+	/*White pawns attack from top to bottom*/
+	else {
+		if (kingPos[0]+1 < 8){
+			if (kingPos[1]+1 < 8) {
+				if (chessboard[kingPos[0]-1][kingPos[1]+1] != NULL){
+					if ((chessboard[kingPos[0]-1][kingPos[1]+1]->color == WHITE ) & 
+						(chessboard[kingPos[0]-1][kingPos[1]+1]->myPieceType == PAWN )) return 1;
+				}
+			}
+			if (kingPos[1]-1 >= 0) {
+				if (chessboard[kingPos[0]-1][kingPos[1]-1] != NULL){
+					if ((chessboard[kingPos[0]-1][kingPos[1]-1]->color == WHITE ) & 
+						(chessboard[kingPos[0]-1][kingPos[1]-1]->myPieceType == PAWN )) return 1;
+				}
+			}
+		}	
+	}
+
+	
+
+	return 0;
+}
+
 /*Checks if the passed move is legal. All other functions use global variable 'lastMove'. More elegant to make it uniform?*/
 bool moveIsLegal(int move[]){
 
@@ -213,39 +408,142 @@ bool moveIsLegal(int move[]){
 	if (chessboard[move[0]][move[1]]->myPieceType == PAWN){
 
 		if (chessboard[move[0]][move[1]]->color == WHITE){
-			int tmp = move[1] - move[3];
 			/*Single step move*/
 			if (move[1] == move[3]){
 				/*Pawn that goes on in straight line, cannot eat another piece*/
 				if (chessboard[move[2]][move[3]] == NULL){
 						if (move[2] - move[0] == 1) {
-						playerPawnHasMoved[move[1]] = true;
+						whitePawnHasMoved[move[1]] = true;
 						return 1;
 					}
 					/*Double step move*/
-					else if ( (move[2] - move[0] == 2) & !playerPawnHasMoved[move[1]] & move[0] == 1) { /*added pawn's line check, otherwise a pawn that has changed his row eating, could use another's pawn +2 bonus*/
-						playerPawnHasMoved[move[1]] = true;
+					else if ( (move[2] - move[0] == 2) & !whitePawnHasMoved[move[1]] & move[0] == 1) { /*added pawn's line check, otherwise a pawn that has changed his row eating, could use another's pawn +2 bonus*/
+						whitePawnHasMoved[move[1]] = true;
+						whitePieces[move[1]]->avaiableForEnpassant = true;
 						return 1;
 					}
 				}
 			}
-			/*If I move to a next column, legit only if i'm eating an adversary's piece*/
-			else if (tmp*tmp == 1){
-				if (chessboard[move[2]][move[3]]->color == BLACK) {
-					playerPawnHasMoved[move[1]] = true;
-					return 1;
+			/*If I move to a next column, legit only if i'm eating an adversary's piece of for en passant*/
+			else if ( (move[2]-move[0] == 1) & ((move[3] - move[1]) == 1 | (move[3] - move[1]) == -1) ){
+				if (chessboard[move[2]][move[3]] != NULL){
+					if (chessboard[move[2]][move[3]]->color == BLACK) {
+						whitePawnHasMoved[move[1]] = true;
+						return 1;
+					}
+				}
+				/*En passant capture*/
+				else if (chessboard[move[0]][move[3]] != NULL){
+					if (chessboard[move[0]][move[3]]->avaiableForEnpassant == true) {
+					/*Not necessary update bool hasMoved (if it can capture en passant, has already moved)*/
+					enPassantExploited = true;
+					return 1; 
+					}
 				}
 			}
-			/*EN PASSANT TO BE IMPLENTED!*/
 		}
 
-		/*IF COLOR = BLACK*/
+		if (chessboard[move[0]][move[1]]->color == BLACK){
+			/*Single step move*/
+			if (move[1] == move[3]){
+				/*Pawn that goes on in straight line, cannot eat another piece*/
+				if (chessboard[move[2]][move[3]] == NULL){
+						if (move[2] - move[0] == -1) {
+						blackPawnHasMoved[move[1]] = true;
+						return 1;
+					}
+					/*Double step move*/
+					else if ( (move[2] - move[0] == -2) & !blackPawnHasMoved[move[1]] & move[0] == 6) { /*added pawn's line check, otherwise a pawn that has changed his row eating, could use another's pawn +2 bonus*/
+						blackPawnHasMoved[move[1]] = true;
+						blackPieces[move[1]]->avaiableForEnpassant = true;
+						return 1;
+					}
+				}
+			}
+			/*If I move to a next column, legit only if i'm eating an adversary's piece of for en passant*/
+			else if ( (move[2]-move[0] == -1) & ((move[3] - move[1]) == 1 | (move[3] - move[1]) == -1) ){
+				if (chessboard[move[2]][move[3]] != NULL){
+					if (chessboard[move[2]][move[3]]->color == WHITE) {
+						blackPawnHasMoved[move[1]] = true;
+						return 1;
+					}
+				}
+				/*En passant capture*/
+				else if (chessboard[move[0]][move[3]] != NULL){
+					if (chessboard[move[0]][move[3]]->avaiableForEnpassant == true) {
+					/*Not necessary update bool hasMoved (if it can capture en passant, has already moved)*/
+					enPassantExploited = true;
+					return 1; 
+					}
+				}
+			}
+		}
 
 
 	}
 
+	if (chessboard[move[0]][move[1]]->myPieceType == KING){
+		if ((move[2] == move[0] | move[2] == move[0]+1 | move[2] == move[0]-1) & 
+			(move[3] == move[1] | move[3] == move[1]+1 | move[3] == move[1]-1) ){
+			/*If square is empty or moving there I would take an adversary's piece*/
+			if (chessboard[move[2]][move[3]] == NULL){
+				if (!isCheck(move, chessboard[move[0]][move[1]]->color)) return 1;
+				else {
+					printf("Illegal move: in that position it will be check\n");
+					return 0;
+				}
+			}
+			else if ( ((chessboard[move[2]][move[3]]->color == BLACK) & isPlayerTurn) |  
+					((chessboard[move[2]][move[3]]->color == WHITE) & !isPlayerTurn) ) {
+				if (!isCheck(move, chessboard[move[0]][move[1]]->color)) return 1;
+				else {
+					printf("Illegal move: in that position it will be check\n");
+					return 0;
+				}
+			}	
+		}
+	}
+
+	if (chessboard[move[0]][move[1]]->myPieceType == KNIGHT){
+		if( ( (move[2]-move[0] == 1) & ((move[3]-move[1] == 2) | (move[3]-move[1] == -2)) ) |
+			( (move[2]-move[0] == -1) & ((move[3]-move[1] == 2) | (move[3]-move[1] == -2)) ) |
+			( (move[2]-move[0] == 2) & ((move[3]-move[1] == 1) | (move[3]-move[1] == -1)) ) |
+			( (move[2]-move[0] == -2) & ((move[3]-move[1] == 1) | (move[3]-move[1] == -1)) ) ){
+			/*If square is empty or moving there I would take an adversary's piece*/
+			if (chessboard[move[2]][move[3]] == NULL){
+				return 1;
+			}
+			else if ( ((chessboard[move[2]][move[3]]->color == BLACK) & isPlayerTurn) |  
+					((chessboard[move[2]][move[3]]->color == WHITE) & !isPlayerTurn) ) {
+				return 1;
+			}	
+		}
+	}
+
+
 	return 0;
 };
+
+/*The possibility to capture a pawn with en passant lasts only one turn*/
+/*so I reset all the bool to false at the end  of the turn*/
+void resetEnPassant(){
+	if (isPlayerTurn){
+		for (int i = 0; i<8; i++){
+			/*if (blackPieces[i]->avaiableForEnpassant){
+				printf("Black Pawn in %d %d was avaiableForEnpassant\n", blackPieces[i]->position[0], blackPieces[i]->position[1]);				
+			}*/
+			blackPieces[i]->avaiableForEnpassant = false;
+		}
+	}
+	else {
+		for (int i = 0; i<8; i++){
+			/*if (whitePieces[i]->avaiableForEnpassant){
+				printf("white Pawn in %d %d was avaiableForEnpassant\n", whitePieces[i]->position[0], whitePieces[i]->position[1]);				
+			}*/
+			whitePieces[i]->avaiableForEnpassant = false;
+		}
+	}
+}
 
 bool playerHasWon(){
 	if (isPlayerTurn){

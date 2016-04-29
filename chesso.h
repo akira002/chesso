@@ -47,3 +47,7 @@ bool moveIsLegal(int move[]);
 void resetEnPassant();
 
 bool playerHasWon();
+
+void generateRandomMove();
+
+char* encodeMove();

@@ -6,22 +6,34 @@
 
 int main()
 {
+	/*can refactor this?*/
 	char nextMove[10];
+	char* encodedMove;
 
 	printf("Welcome to Chesso, by Alessandro Cocilova \n");
 	printf("Please type your move in the format: StartcolStartrow.EndcolEndrow (es. a1.a2) \n\n\n");
 	initChessboard();
-	while (!playerHasWon()) { // senseless to pass the chessboard to this function, because there's only one chessboard
- 	printChessboard();
- 	do {
- 		printf("Type your next move: ");
-   		fgets(nextMove, 10, stdin);
- 	} while (!moveIsLegal(decodePlayerMove(nextMove)));
-   	move(nextMove);
-   	resetEnPassant();
-   	isPlayerTurn = !isPlayerTurn;
- }
-
+	while (!playerHasWon()) {
+ 		printChessboard();
+ 		if (isPlayerTurn){
+ 			do {
+ 				printf("Type your next move: ");
+   				fgets(nextMove, 10, stdin);
+ 			} while (!moveIsLegal(decodePlayerMove(nextMove)));
+ 		}
+ 		else {
+ 			do {
+ 				generateRandomMove();
+ 			} while (!moveIsLegal(lastMove));
+ 			encodedMove = encodeMove();
+ 			strcpy(nextMove, encodedMove);
+ 			free(encodedMove);
+ 		}
+ 	
+   		move(nextMove);
+   		resetEnPassant();
+   		isPlayerTurn = !isPlayerTurn;
+ 	}
 };
 
 /*Inits the checkerboard, allocating space for 20 structs, one for each piece in game, initializing them and making the corresponding squares target them*/
@@ -169,8 +181,8 @@ void printChessboard(){
 /*Moves a piece from its square to the specified square updating the model*/
 void move(char playerMove[]){
 	/*playerMove used just to provide a feedback to the player of AI's move*/
-	if (isPlayerTurn) printf("White moves: %s\n", playerMove);
-	else printf("Black moves: %s\n", playerMove);
+	if (isPlayerTurn) printf("\nWhite moves: %s\n", playerMove);
+	else printf("\nBlack moves: %s\n\n", playerMove);
 
 	if (chessboard[lastMove[0]][lastMove[1]] != NULL) {
 		/*The square where i've moved the piece, now targets to the piece*/
@@ -546,7 +558,8 @@ void resetEnPassant(){
 }
 
 bool playerHasWon(){
-	if (isPlayerTurn){
+	/*Seems antiintuitive, but in my turn i've to check if my adversary has won, before consider which move to choose*/
+	if (!isPlayerTurn){
 		for (int i = 0; i<8; i++) {
 			if (chessboard[7][i] != NULL) {
 				if ( (chessboard[7][i]->color == WHITE) & (chessboard[7][i]->myPieceType == PAWN) ){
@@ -569,3 +582,41 @@ bool playerHasWon(){
 	}
 	return 0;
 };
+
+void generateRandomMove(){
+	lastMove[0] = rand()%8;
+	lastMove[1] = rand()%8;
+	lastMove[2] = rand()%8;
+	lastMove[3] = rand()%8;
+};
+
+char* encodeMove(){
+	char* moveEncoded;
+	moveEncoded = malloc(6*sizeof(char));
+	switch (lastMove[1]){
+		case 0: moveEncoded[0] = 'a'; break;
+		case 1: moveEncoded[0] = 'b'; break;
+		case 2: moveEncoded[0] = 'c'; break;
+		case 3: moveEncoded[0] = 'd'; break;
+		case 4: moveEncoded[0] = 'e'; break;
+		case 5: moveEncoded[0] = 'f'; break;
+		case 6: moveEncoded[0] = 'g'; break;
+		case 7: moveEncoded[0] = 'h'; break;
+	}
+	switch (lastMove[3]){
+		case 0: moveEncoded[3] = 'a'; break;
+		case 1: moveEncoded[3] = 'b'; break;
+		case 2: moveEncoded[3] = 'c'; break;
+		case 3: moveEncoded[3] = 'd'; break;
+		case 4: moveEncoded[3] = 'e'; break;
+		case 5: moveEncoded[3] = 'f'; break;
+		case 6: moveEncoded[3] = 'g'; break;
+		case 7: moveEncoded[3] = 'h'; break;
+	}
+	moveEncoded[1] = '0' + lastMove[0]+1;
+	moveEncoded[4] = '0' + lastMove[2]+1;
+	moveEncoded[2] = '.';
+	moveEncoded[5] = '\0';
+
+	return moveEncoded;
+}
